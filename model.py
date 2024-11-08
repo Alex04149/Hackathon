@@ -22,6 +22,9 @@ class MLP:
             case _:
                 raise ModeError(f"Incorrect mode. Should be {_get_modes()}")
 
+        self.losses_and_evaluates_list = []
+        
+
     def forward(self, a):
         for w, b in zip(self.weights[:-1], self.biases[:-1]):
             a = sigmoid(np.dot(w, a) + b)
@@ -29,11 +32,14 @@ class MLP:
         z_L = np.dot(w_L, a) + b_L
         return np.round(softmax(z_L), 3)
 
-    def SGD(self, training_data, epochs: int, mini_batch_size: int, learning_rate: float, weight_decay: float=0.0) -> None:
+    def SGD(self, training_data, test_data, epochs: int, mini_batch_size: int, learning_rate: float, weight_decay: float=0.0) -> None:
         eta = learning_rate
         lmbda = weight_decay
 
+        losses = 0
+
         for _ in range(epochs):
+            losses = 0 
             np.random.shuffle(training_data)
             mini_batches = [
                 training_data[k:k+mini_batch_size] 
@@ -41,25 +47,37 @@ class MLP:
                 ]
 
             for mini_batch in mini_batches:
-                self._update_mini_batch(mini_batch, eta, lmbda)
+                losses += self._update_mini_batch(mini_batch, eta, lmbda)
+            self.losses_and_evaluates_list.append((losses/len(mini_batches),self.evaluate(test_data)))   
+                
+             
 
-    def _update_mini_batch(self, mini_batch, eta, lmbda) -> None:
+    def _update_mini_batch(self, mini_batch, eta, lmbda) -> float:
         nabla_weights = [np.zeros(w.shape) for w in self.weights]
         nabla_biases = [np.zeros(b.shape) for b in self.biases]
 
+        l = 0
+
         #region calculate nablas
         for x, y in mini_batch:
-            delta_nabla_weights, delta_nabla_biases = self._backprop(x, y)
+            delta_nabla_weights, delta_nabla_biases, loss = self._backprop(x, y)
 
             nabla_weights = [nw + dnw for nw, dnw in zip(nabla_weights, delta_nabla_weights)]
             nabla_biases = [nb + dnb for nb, dnb in zip(nabla_biases, delta_nabla_biases)]
+            l += loss
+            
 
         regulization_term = 1 - (eta * lmbda / 1158)  # 1158 - the number of test data
         self.weights = [regulization_term * w - (eta / len(mini_batch)) * nw for w, nw in zip(self.weights, nabla_weights)]
         self.biases = [b - (eta / len(mini_batch)) * nb for b, nb in zip(self.biases, nabla_biases)]
+        return l/len(mini_batch)
         #endregion
 
-    def _backprop(self, x, y) -> tuple[list, list]:
+    def _backprop(self, x, y) -> tuple[list, list, float]:
+        def loss(x):
+            j = np.argmax(y)
+            return -np.log(x[j])
+
         nabla_w = [np.zeros(w.shape) for w in self.weights]
         nabla_b = [np.zeros(b.shape) for b in self.biases]
 
@@ -101,7 +119,7 @@ class MLP:
             nabla_w[-l] = np.outer(delta, activations[-l-1])
         #endregion
 
-        return (nabla_w, nabla_b)
+        return (nabla_w, nabla_b, loss(activations[-1]))
 
     def evaluate(self, test_data) -> float:
         detections = 0
