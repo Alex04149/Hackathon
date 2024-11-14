@@ -5,6 +5,7 @@ from model import MLP
 from data_loader import load_data
 
 if __name__ == "__main__":
+    fz = 16  # fontzied
     net = MLP(mode="rand", sizes=[469,40,40,20,20,2])
     td = load_data("training")
     t_data = load_data("test")
@@ -14,18 +15,18 @@ if __name__ == "__main__":
     t = np.linspace(1,e,e)
     plt.figure().set_figwidth(12)
     plt.plot(t,[net.losses_and_evaluates_list[i][1] * 100 for i in range(e)])
-    plt.title("Epochs/Accuracy")
-    plt.xlabel("Epochs")
-    plt.ylabel("Accuracy")
+    plt.title("Epochs/Accuracy",fontsize=fz)
+    plt.xlabel("Epochs",fontsize=fz)
+    plt.ylabel("Accuracy",fontsize=fz)
     plt.savefig("D:\\Equipment-fault-detection-1dcnn-main\\epochs_accurate.png")
     plt.clf()
     plt.close()
 
     plt.figure().set_figwidth(12)
     plt.plot(t,[net.losses_and_evaluates_list[i][0]  for i in range(e)])
-    plt.title("Epochs/Loss")
-    plt.xlabel("Epochs")
-    plt.ylabel("Loss")
+    plt.title("Epochs/Loss",fontsize=fz)
+    plt.xlabel("Epochs",fontsize=fz)
+    plt.ylabel("Loss",fontsize=fz)
     plt.savefig("D:\\Equipment-fault-detection-1dcnn-main\\epochs_loss.png")
     plt.clf()
     plt.close()
